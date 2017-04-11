@@ -12,7 +12,7 @@ class Gbnnode{
         }
         else if (mode.equals("-p") && args.length==5)
         {
-            Prob p1 = new Prob();
+            Prob p1 = new Prob(args);
         }    
         else 
             System.out.println("Incorrect arguments");
