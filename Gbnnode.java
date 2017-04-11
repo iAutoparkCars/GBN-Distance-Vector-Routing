@@ -8,7 +8,7 @@ class Gbnnode{
         String mode = args[3];
         if (mode.equals("-d") && args.length==5)
         {
-            Determ d1 = new Determ();
+            Determ d1 = new Determ(args);
         }
         else if (mode.equals("-p") && args.length==5)
         {

@@ -3,7 +3,7 @@ import java.util.Scanner;
 
 public class Determ
 {
-    public Determ()
+    public Determ(String args[])
     {
         startInputThread();
     }
