@@ -3,11 +3,20 @@ import java.util.Scanner;
 
 public class Determ
 {
-	public static String mode = "";
-    
+    private String selfPort = "";
+    private String peerPort = "";
+    private Integer winSize = 0;
+    private String mode = "";
+    private Integer nVal = 0;
+       	
+	
 	public Determ(String args[])
     {
-    	this.mode = args[3];
+		this.selfPort = args[0];
+		this.peerPort = args[1];
+		this.winSize = Integer.getInteger(args[2]);
+		this.mode = args[3];
+		this.nVal = Integer.getInteger(args[4]);
         startInputThread();
     }
     
@@ -19,17 +28,24 @@ public class Determ
         thread1.start();
     }
     
+    
     class ReadInput implements Runnable
     {
         public void run()
         {
             Scanner reader = new Scanner(System.in);
-            String cmd;
+            String[] cmdArray;
             while (true)
             {
-                cmd = reader.nextLine();
-                System.out.println(cmd);
+            	System.out.print("node> ");
+                cmdArray = reader.nextLine().trim().replaceAll(" +"," ").split(" ");
+                
             }
         }     
-    }
+    } //end ReadInput subclass
+    
+    
+    
+    
+    
 }
