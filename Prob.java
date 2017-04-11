@@ -38,10 +38,18 @@ public class Prob
             {
             	System.out.print("node> ");
                 cmdArray = reader.nextLine().trim().replaceAll(" +"," ").split(" ");
+                if (cmdArray[0].trim().toLowerCase().equals("send"))
+                {
+                	sendPacket(cmdArray);
+                }
             }
         }     
     } //end ReadInput subclass
     
     
+    public void sendPacket(String[] cmd)
+    {
+    	
+    }
     
 }

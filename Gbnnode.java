@@ -8,11 +8,11 @@ class Gbnnode{
         String mode = args[3];
         if (mode.equals("-d") && args.length==5)
         {
-            Determ d1 = new Determ(args);
+            Node n1 = new Node(args);
         }
         else if (mode.equals("-p") && args.length==5)
         {
-            Prob p1 = new Prob(args);
+            Node n2 = new Node(args);
         }    
         else 
             System.out.println("Incorrect arguments");
