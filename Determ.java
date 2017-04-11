@@ -3,8 +3,11 @@ import java.util.Scanner;
 
 public class Determ
 {
-    public Determ(String args[])
+	public static String mode = "";
+    
+	public Determ(String args[])
     {
+    	this.mode = args[3];
         startInputThread();
     }
     

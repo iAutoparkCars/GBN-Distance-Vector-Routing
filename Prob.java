@@ -3,8 +3,11 @@ import java.util.Scanner;
 
 public class Prob
 {
+	public static String mode = "";
+
     public Prob(String args[])
     {
+    	this.mode = args[3];
         startInputThread();
     }
  
