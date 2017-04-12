@@ -1,7 +1,7 @@
 import java.io.IOException;
 import java.util.Scanner;
 
-class Gbnnode{
+class Gbnnode2{
     
     
     public static void main (String args[]) throws IOException
