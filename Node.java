@@ -3,9 +3,10 @@ import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
 
-import sun.misc.Queue;
 
 
 public class Node 
@@ -76,19 +77,18 @@ public class Node
 	     * Takes the message, and parses into characters
 	    */
 	    
-	    Queue<Character> buffer = new Queue<Character>();
+	    Queue<Character> buffer = new LinkedList<Character>();
 	    public void queueMessage(String msg) 
 	    {
 	    	char[] arr = msg.toCharArray();
 	    	for (int i = 0; i < arr.length; i++)
 	    	{
-	    		buffer.enqueue(arr[i]);
+	    		buffer.add(arr[i]);
 	    	}
 	    	
 	    	while(!buffer.isEmpty())
 	    	{
-	    		try {System.out.print(buffer.dequeue() + " ");} 
-	    		catch (InterruptedException e) {e.printStackTrace();}
+	    		System.out.print(buffer.remove() + " ");
 	    	}
 	    }
 	    
