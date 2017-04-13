@@ -6,6 +6,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
@@ -90,18 +92,42 @@ public class Node
 	                */
 	                if (cmdArray[0].trim().toLowerCase().equals("send"))
 	                {
-	                	//loads message of chars into a queue
-	                	queueMessage(cmdArray[1]);
+	                	//resets counter & loads message cmdArray[1] into buffer (array)
+	                	counter = 0;    
+	                	buffer = cmdArray[1].toCharArray();
 	                	
-	                	InetAddress ia;
-						try
-						{
-							ia = InetAddress.getLocalHost();
-							sendPacket(1, buffer.peek(), ia, peerPort);
-						} 
-						//listen for ack somewhere
-						catch (UnknownHostException e) {e.printStackTrace();} 
-						catch (IOException e) {e.printStackTrace();}
+	                	while (counter<buffer.length)
+	                	{
+	                		for (int i = (0+counter); i < (winSize+counter); i++)
+	                		{
+	                			
+	                			//send packet
+	                			InetAddress ia;
+	    						try
+	    						{
+	    							ia = InetAddress.getLocalHost();
+	    							sendPacket(i, buffer.length, buffer[i], ia, peerPort);
+	    						} 
+	    						catch (UnknownHostException e) {e.printStackTrace();} 
+	    						catch (IOException e) {e.printStackTrace();}
+	                			
+	                			//listenforACK
+	    						
+	    						try
+	    						{Thread.sleep(300);} 
+	    						catch (InterruptedException e)
+	    						{e.printStackTrace();}
+	                			
+	                			
+	                		}
+	                	}
+	                	
+	                	
+	                	
+	                	
+	                	
+	                	
+	                	
 	                	
 	                	//Packet p1 = new Packet()
 	                	//sendPacket(cmdArray);
@@ -115,17 +141,19 @@ public class Node
 	    
 	    
 	    /*
-	     * puts all data into queue of characters
+	     * puts all data into char of characters
 	    */
-	    Queue<Character> buffer = new LinkedList<Character>();
-	    
+	    Integer counter = 0;
+	    char[] buffer;  
 	    public void queueMessage(String msg) 
 	    {
 	    	char[] arr = msg.toCharArray();
-	    	for (int i = 0; i < arr.length; i++)
+	    	buffer = arr;
+	    			
+	    	/*for (int i = 0; i < arr.length; i++)
 	    	{
 	    		buffer.add(arr[i]);
-	    	}
+	    	}*/
 	    	
 	    	/*while(!buffer.isEmpty())
 	    	{
@@ -135,20 +163,21 @@ public class Node
 	    
 	    
 	    /*
-	     * 
+	     * @param [Sequence number | buffer length | data], recipientIP, recipientPort 
 	    */
-	    public void sendPacket(Integer seq, Character data, InetAddress recIP, Integer recPort) throws IOException
+	    public void sendPacket(Integer seq, Integer buffLength, Character data, 
+	    		InetAddress recIP, Integer recPort) throws IOException
 	    {
 	    	//seq = 0;
 	    	//data = null;
-	    	byte[] b0 = (seq.toString() + " " + data).getBytes();
+	    	
+	    	//sequence number | buffer length | data (char)
+	    	byte[] b0 = (seq.toString() + " " + buffLength.toString() + " " + data).getBytes();
 	    	
 	    	DatagramSocket Send_Socket = new DatagramSocket();
 			DatagramPacket Client_Register = new DatagramPacket(b0,b0.length,recIP,recPort);
 			Send_Socket.send(Client_Register);
 			Send_Socket.close();
-	    	    	
-	    	
 	    }
 	    
 }
