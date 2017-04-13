@@ -96,12 +96,20 @@ public class Node
 	                	counter = 0;    
 	                	buffer = cmdArray[1].toCharArray();
 	                	
+	                	
+	                	//checks if window size is larger than the buffer
+	                	if (winSize>buffer.length)
+	                	{
+	                		System.out.println("Window size is larger than the message. "
+	                				+ " Aborting send. Restart program with reduced window size.");
+	                		return;
+	                	}
+	                	
+	                	//sends message character by character following window size
 	                	while (counter<buffer.length)
 	                	{
 	                		for (int i = (0+counter); i < (winSize+counter); i++)
 	                		{
-	                			
-	                			//send packet
 	                			InetAddress ia;
 	    						try
 	    						{
