@@ -43,6 +43,7 @@ public class Node
 		//may want to return of array of String in future
 		public void listenForPacket(Integer recPort) throws IOException
 		{
+			//retrieve message
 			DatagramSocket Listen_Socket = new DatagramSocket(recPort);
 			byte[] b1 = new byte[1024];
 			DatagramPacket pc = new DatagramPacket(b1,b1.length);
@@ -51,8 +52,19 @@ public class Node
 			String getMsg = new String(pc.getData());
 			Listen_Socket.close();
 			
+			//convert retrieved message to string to be parsed
+			
+			//getMsg.replaceAll(" +", " ").trim();
+			//String[] arr = getMsg.split(" ");
+			
+			/*
+			 * TO DO: write this function so that it immediately replies with ACK
+			 * using the example and use try block to close resource 
+			*/
 			System.out.println(pc.getSocketAddress());
 			System.out.println(getMsg);
+			
+			
 		}
 
 		public Boolean sequenceIsCorrect()
