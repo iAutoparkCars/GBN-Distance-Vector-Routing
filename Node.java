@@ -5,6 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -125,7 +126,8 @@ public class Node
 	    
 		Integer counter = 0;
 		char[] buffer;  
-	    
+		Boolean timedOut = false;
+		
 		class ReadInput implements Runnable
 	    {
 	        public void run()
@@ -171,30 +173,35 @@ public class Node
 	                	{
 	                		for (int i = (0+counter); i < (winSize+counter); i++)
 	                		{
-	                			DatagramSocket s1 = null;
-	                			InetAddress ia;
-	                			String[] info = null;
+	                			if (i ==2)
+	                			{
+	                				//do nothing
+	                			}
+	                			else if (i < buffer.length)
+	                			{
+	                				DatagramSocket s1 = null;
+	                				InetAddress ia;
+	                				String[] info = null;
 	                			
-	                			//info: [seqNumber | msgLength | data | sender's port]
-	    						try
-	    						{
-	    							ia = InetAddress.getLocalHost();
-	    							info = sendPacketGetACK(s1,i, buffer.length, buffer[i], ia, peerPort);
-	    						} 
-	    						catch (UnknownHostException e) {e.printStackTrace();} 
-	    						catch (IOException e) {e.printStackTrace();}
-	                			
-	    		        		System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);
+	                				//info: [seqNumber | msgLength | data | sender's port]
+	                				try
+	                				{
+	                					ia = InetAddress.getLocalHost();
+	                					info = sendPacketGetACK(s1,i, buffer.length, buffer[i], ia, peerPort);
+	                				} 
+	                				catch (UnknownHostException e) {e.printStackTrace();} 
+	                				catch (IOException e) {e.printStackTrace();}
+	                				
+	                				
+	                				{System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);}
 	    		        		
-	    		        		
-	    						
-	    						try
-	    						{Thread.sleep(300);} 
-	    						catch (InterruptedException e)
-	    						{e.printStackTrace();}
+	                				try
+	                				{Thread.sleep(300);} 
+	                				catch (InterruptedException e)
+	                				{e.printStackTrace();}
+	                			} //if statement prevents i going past counter 		
 	                			
-	                			
-	                		}
+	                		} //end sendPacketGetACK
 	                	}
 	                	
 	                }
@@ -222,9 +229,17 @@ public class Node
 			
 				
 			//get ACK
+	    		socket.setSoTimeout(500);
 	    		byte[] b1 = new byte[1024];
 	    		DatagramPacket pc = new DatagramPacket(b1,b1.length);
-	    		socket.receive(pc);
+	    		
+	    		try
+	    		{socket.receive(pc);}
+	    		catch(SocketTimeoutException e)
+	    		{	
+	    			timedOut = true;
+	    			System.out.println("Timed out");
+	    		}
 
 	    		//Must trim after getData() function because it returns arbitrary whitespace
 	    		String getMsg = new String(pc.getData()).trim();
@@ -235,12 +250,13 @@ public class Node
 	    		String[] info = (getMsg + " "+port).replaceAll("\\s+"," ").split(" ");
 	    		socket.close();
 			
+	    		
 	    	//unpack listened info for convenience [seqNumber | buffLength | data | sender's port]
 	        	Integer ackSeq = Integer.valueOf(info[0]);
 	        	Integer ackBuffLength = Integer.valueOf(info[1]);
 	        	Character ackData = info[2].charAt(0);
 	        	Integer ackReplyToPort = Integer.valueOf(info[3]);
-	        	
+	    		
 	       //Based on ack's info, decide to increment counter
 	        	if (ackSeq >= counter)
 	        	{
@@ -251,7 +267,8 @@ public class Node
 	        	{
 	        		//received duplicate ack
 	        	}
-	        	
+	    	
+	    	
 	    	return info;
 	  }
 	    
