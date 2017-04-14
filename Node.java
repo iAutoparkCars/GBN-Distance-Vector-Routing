@@ -22,7 +22,8 @@ public class Node
 	    private Integer winSize = 0;
 	    private String mode = "";
 	    private Integer nVal = 0;
-	       	
+	    
+	    private Integer expected = 0;
 		
 		public Node(String args[]) throws IOException
 	    {
@@ -32,50 +33,87 @@ public class Node
 			this.mode = args[3];
 			this.nVal = Integer.valueOf((args[4]));
 	        startInputThread();
+	        
+	        
 	        while(true)
 	        {
-	        	listenForPacket(selfPort);
-	        	//sequenceIsCorrect();
-	        	//sendAck();
+	        	
+	        	listenPacketSendACK(selfPort);
+	        	
+	        	
+	        	
+	        	
+	        	
 	        }
+	    
 	    }
 		
-		//may want to return of array of String in future
-		public void listenForPacket(Integer recPort) throws IOException
+		
+		/* @param Current Socket: listen and reply with ACK
+		 * 		  Port: get port of sender
+		 *  
+		*/
+		public void listenPacketSendACK(Integer recPort) throws IOException
 		{
 			//retrieve message
-			DatagramSocket Listen_Socket = new DatagramSocket(recPort);
+			DatagramSocket listen_socket = new DatagramSocket(recPort);
 			byte[] b1 = new byte[1024];
 			DatagramPacket pc = new DatagramPacket(b1,b1.length);
-			Listen_Socket.receive(pc);
-			pc.getSocketAddress();
-			String getMsg = new String(pc.getData());
-			Listen_Socket.close();
+			listen_socket.receive(pc);
+
+			//Must trim after getData() function because it returns arbitrary whitespace
+			String getMsg = new String(pc.getData()).trim();
 			
-			//convert retrieved message to string to be parsed
-			
-			//getMsg.replaceAll(" +", " ").trim();
-			//String[] arr = getMsg.split(" ");
-			
-			/*
-			 * TO DO: write this function so that it immediately replies with ACK
-			 * using the example and use try block to close resource 
-			*/
-			System.out.println(pc.getSocketAddress());
-			System.out.println(getMsg);
+			//returns seqNumber | msgLength | data | sender's port
+			String port = String.valueOf(pc.getPort()).trim();
 			
 			
+			//System.out.println((getMsg + " "+port).replaceAll("\\s+"," "));
+			String[] info = (getMsg + " "+port).replaceAll("\\s+"," ").split(" ");
+			
+			//unpack listened info for convenience [seqNumber | buffLength | data | sender's port]
+        	Integer seq = Integer.valueOf(info[0]);
+        	Integer buffLength = Integer.valueOf(info[1]);
+        	Character data = info[2].charAt(0);
+        	Integer replyToPort = Integer.valueOf(info[3]);
+			
+        	if (seq == expected && seq < buffLength)
+        	{
+        		expected++;
+        		System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);
+        		sendACK(seq, buffLength, null, InetAddress.getLocalHost(), replyToPort);
+        	}
+        	else if (seq > expected)
+        	{
+        		//reject: cannot accept yet
+        	}
+        	else if (seq < expected)
+        	{
+        		//reject duplicate: already accepted
+        	}
+			
+			listen_socket.close();
 		}
 
+		
+		//sends ACK indicated by null data value
+		public void sendACK(Integer seq, Integer buffLength, Character data, 
+	    		InetAddress recIP, Integer recPort) throws IOException
+		{
+			byte[] b0 = (seq.toString() + " " + buffLength.toString() + " " + data).getBytes();
+	    	DatagramSocket Listen_Socket = new DatagramSocket();
+			DatagramPacket p1 = new DatagramPacket(b0,b0.length,recIP,recPort);
+			Listen_Socket.send(p1);
+			Listen_Socket.close();
+		}
+		
+		
 		public Boolean sequenceIsCorrect()
 		{
 			return false;
 		}
 	    
-		public void sendAck()
-		{
-			
-		}
+		
 
 		private void startInputThread()
 	    {
@@ -85,7 +123,10 @@ public class Node
 	    }
 	    
 	    
-	    class ReadInput implements Runnable
+		Integer counter = 0;
+		char[] buffer;  
+	    
+		class ReadInput implements Runnable
 	    {
 	        public void run()
 	        {
@@ -94,9 +135,14 @@ public class Node
 	            while (true)
 	            {
 	            	System.out.print("node> ");
-	                cmdArray = reader.nextLine().trim().replaceAll(" +"," ").split(" ");
+	                cmdArray = reader.nextLine().trim().replaceAll("\\s+"," ").split(" ");
 	                
-	                //if command line indicates to send, then cmdArray[1] will be the message
+	                //checks if appropriate number of arguments were given
+	                if (cmdArray.length!=2)
+	                {
+	                	System.out.println("Incorrect number of arguments. Restart with 1 argument.");
+	                	return;
+	                }
 	                
 	                /*
 	                 * This thread will create threads for each packet and wait for ALL packet threads to finish.
@@ -108,7 +154,6 @@ public class Node
 	                	counter = 0;    
 	                	buffer = cmdArray[1].toCharArray();
 	                	
-	                	
 	                	//checks if window size is larger than the buffer
 	                	if (winSize>buffer.length)
 	                	{
@@ -117,21 +162,31 @@ public class Node
 	                		return;
 	                	}
 	                	
+	                	//TO DO: Why on last iteration line 181 tries to send packet containing buffer[buffer.length]
+	                	//which doesn't exist. ie. if message is size =6, it tries to send buffer[6] but should only send up to buffer[5]
+	                	
+	                	
 	                	//sends message character by character following window size
 	                	while (counter<buffer.length)
 	                	{
 	                		for (int i = (0+counter); i < (winSize+counter); i++)
 	                		{
+	                			DatagramSocket s1 = null;
 	                			InetAddress ia;
+	                			String[] info = null;
+	                			
+	                			//info: [seqNumber | msgLength | data | sender's port]
 	    						try
 	    						{
 	    							ia = InetAddress.getLocalHost();
-	    							sendPacket(i, buffer.length, buffer[i], ia, peerPort);
+	    							info = sendPacketGetACK(s1,i, buffer.length, buffer[i], ia, peerPort);
 	    						} 
 	    						catch (UnknownHostException e) {e.printStackTrace();} 
 	    						catch (IOException e) {e.printStackTrace();}
 	                			
-	                			//listenforACK
+	    		        		System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);
+	    		        		
+	    		        		
 	    						
 	    						try
 	    						{Thread.sleep(300);} 
@@ -142,15 +197,6 @@ public class Node
 	                		}
 	                	}
 	                	
-	                	
-	                	
-	                	
-	                	
-	                	
-	                	
-	                	
-	                	//Packet p1 = new Packet()
-	                	//sendPacket(cmdArray);
 	                }
 	                //BigDecimal currTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
 	                //System.out.println(currTime);	
@@ -158,46 +204,55 @@ public class Node
 	        }     
 	    } //end ReadInput subclass
 	    
-	    
-	    
-	    /*
-	     * puts all data into char of characters
-	    */
-	    Integer counter = 0;
-	    char[] buffer;  
-	    public void queueMessage(String msg) 
-	    {
-	    	char[] arr = msg.toCharArray();
-	    	buffer = arr;
-	    			
-	    	/*for (int i = 0; i < arr.length; i++)
-	    	{
-	    		buffer.add(arr[i]);
-	    	}*/
-	    	
-	    	/*while(!buffer.isEmpty())
-	    	{
-	    		System.out.print(buffer.remove() + " ");
-	    	}*/
-	    }
-	    
-	    
+
 	    /*
 	     * @param [Sequence number | buffer length | data], recipientIP, recipientPort 
 	    */
-	    public void sendPacket(Integer seq, Integer buffLength, Character data, 
+	    public String[] sendPacketGetACK(DatagramSocket socket, Integer seq, Integer buffLength, Character data, 
 	    		InetAddress recIP, Integer recPort) throws IOException
 	    {
-	    	//seq = 0;
-	    	//data = null;
+	    	//send Packet
 	    	
-	    	//sequence number | buffer length | data (char)
-	    	byte[] b0 = (seq.toString() + " " + buffLength.toString() + " " + data).getBytes();
+	    		//sequence number | buffer length | data (char)
+	    		byte[] b0 = (seq.toString() + " " + buffLength.toString() + " " + data).getBytes();
 	    	
-	    	DatagramSocket Send_Socket = new DatagramSocket();
-			DatagramPacket Client_Register = new DatagramPacket(b0,b0.length,recIP,recPort);
-			Send_Socket.send(Client_Register);
-			Send_Socket.close();
-	    }
+	    		socket = new DatagramSocket();
+	    		DatagramPacket Client_Register = new DatagramPacket(b0,b0.length,recIP,recPort);
+	    		socket.send(Client_Register);
+			
+				
+			//get ACK
+	    		byte[] b1 = new byte[1024];
+	    		DatagramPacket pc = new DatagramPacket(b1,b1.length);
+	    		socket.receive(pc);
+
+	    		//Must trim after getData() function because it returns arbitrary whitespace
+	    		String getMsg = new String(pc.getData()).trim();
+				
+	    		//returns seqNumber | msgLength | data | sender's port
+	    		String port = String.valueOf(pc.getPort()).trim();
+				
+	    		String[] info = (getMsg + " "+port).replaceAll("\\s+"," ").split(" ");
+	    		socket.close();
+			
+	    	//unpack listened info for convenience [seqNumber | buffLength | data | sender's port]
+	        	Integer ackSeq = Integer.valueOf(info[0]);
+	        	Integer ackBuffLength = Integer.valueOf(info[1]);
+	        	Character ackData = info[2].charAt(0);
+	        	Integer ackReplyToPort = Integer.valueOf(info[3]);
+	        	
+	       //Based on ack's info, decide to increment counter
+	        	if (ackSeq >= counter)
+	        	{
+	        		int x = ackSeq-counter;
+	        		counter = counter + x + 1;
+	        	}
+	        	else
+	        	{
+	        		//received duplicate ack
+	        	}
+	        	
+	    	return info;
+	  }
 	    
 }
