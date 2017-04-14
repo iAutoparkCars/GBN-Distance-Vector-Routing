@@ -78,10 +78,26 @@ public class Node
         	Character data = info[2].charAt(0);
         	Integer replyToPort = Integer.valueOf(info[3]);
 			
+        	//Receiver: print received data time
+        	BigDecimal getDataTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
+        	System.out.println("["+getDataTime+"] " + "packet" + seq + " " + data + " received");
+        	
+        	
+        	
+        	
         	if (seq == expected && seq < buffLength)
         	{
         		expected++;
-        		System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);
+        		//System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);
+        		
+        		/*if (seq==2)
+        		{
+        			seq = -1;
+        		}
+        		if (seq==3)
+        		{
+        			seq = -213;
+        		}*/
         		sendACK(seq, buffLength, null, InetAddress.getLocalHost(), replyToPort);
         	}
         	else if (seq > expected)
@@ -93,9 +109,16 @@ public class Node
         		//reject duplicate: already accepted
         	}
 			
+			
+			//Receiver: print reply ack status
+			BigDecimal replyACKTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
+			System.out.println("["+replyACKTime+"]"+" ACK" + seq + " sent, ecpecting packet " + expected);
+			
+			
 			listen_socket.close();
 		}
 
+		
 		
 		//sends ACK indicated by null data value
 		public void sendACK(Integer seq, Integer buffLength, Character data, 
@@ -173,11 +196,8 @@ public class Node
 	                	{
 	                		for (int i = (0+counter); i < (winSize+counter); i++)
 	                		{
-	                			if (i ==2)
-	                			{
-	                				//do nothing
-	                			}
-	                			else if (i < buffer.length)
+	                			
+	                			if (i < buffer.length)
 	                			{
 	                				DatagramSocket s1 = null;
 	                				InetAddress ia;
@@ -193,7 +213,7 @@ public class Node
 	                				catch (IOException e) {e.printStackTrace();}
 	                				
 	                				
-	                				{System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);}
+	                				//{System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);}
 	    		        		
 	                				try
 	                				{Thread.sleep(300);} 
@@ -205,8 +225,7 @@ public class Node
 	                	}
 	                	
 	                }
-	                //BigDecimal currTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
-	                //System.out.println(currTime);	
+	               
 	            }
 	        }     
 	    } //end ReadInput subclass
@@ -226,7 +245,14 @@ public class Node
 	    		socket = new DatagramSocket();
 	    		DatagramPacket Client_Register = new DatagramPacket(b0,b0.length,recIP,recPort);
 	    		socket.send(Client_Register);
-			
+				
+				
+				//Sender: print send data time
+				BigDecimal currTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
+	            System.out.println("["+currTime+"] " + "packet" + seq + " " + data + " sent");
+				
+	            
+	            
 				
 			//get ACK
 	    		socket.setSoTimeout(500);
@@ -249,8 +275,8 @@ public class Node
 				
 	    		String[] info = (getMsg + " "+port).replaceAll("\\s+"," ").split(" ");
 	    		socket.close();
-			
-	    		
+				
+				
 	    	//unpack listened info for convenience [seqNumber | buffLength | data | sender's port]
 	        	Integer ackSeq = Integer.valueOf(info[0]);
 	        	Integer ackBuffLength = Integer.valueOf(info[1]);
@@ -268,8 +294,23 @@ public class Node
 	        		//received duplicate ack
 	        	}
 	    	
+	    	//Sender: print receive ACK status
+	    		BigDecimal getACKTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
+				System.out.println("["+getACKTime+"]"+" ACK" + ackSeq + " received, window moves to " + (counter));
+	    		
 	    	
 	    	return info;
-	  }
+	  } //end sendPacketGetACK
 	    
+	    
+	  public void emulateSendFailure()
+	  {
+	  	
+	  }
+	  
+	  public String printStatus(String status)
+	  {
+			
+			return status;
+	  }
 }
