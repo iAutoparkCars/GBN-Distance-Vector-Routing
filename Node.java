@@ -24,8 +24,37 @@ public class Node
 	    private String mode = "";
 	    private Integer nVal = 0;
 	    
+	    //global instances used by receiver
 	    private Integer expected = 0;
-		
+	    private Integer sequence = 0;
+	    private Integer msgLength = 0;
+	    
+	    DatagramSocket s1 = null;
+	    
+	    
+	    class CloseSocket implements Runnable
+	    {
+	        public void run()
+	        {
+	        	/*while(true)
+	        	{
+	        		if (sequence == (msgLength-1))
+	        		{
+	        			s1.disconnect();
+	        			s1.close();
+	        			
+	        			
+	        			try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+	        		}
+	        	}*/
+	        }
+	    }
+	    
 		public Node(String args[]) throws IOException
 	    {
 			this.selfPort = Integer.valueOf(args[0]);
@@ -33,14 +62,18 @@ public class Node
 			this.winSize = Integer.valueOf(args[2]);
 			this.mode = args[3];
 			this.nVal = Integer.valueOf((args[4]));
-	        startInputThread();
+	        
+			startInputThread();
+	        
+	        /*CloseSocket close = new CloseSocket();
+	        Thread t1 = new Thread(close);
+	        t1.start();*/
 	        
 	        
 	        while(true)
 	        {
 	        	
-	        	listenPacketSendACK(selfPort);
-	        	
+	        	listenPacketSendACK(s1,selfPort);
 	        	
 	        	
 	        	
@@ -54,14 +87,33 @@ public class Node
 		 * 		  Port: get port of sender
 		 *  
 		*/
-		public void listenPacketSendACK(Integer recPort) throws IOException
+		public void listenPacketSendACK(DatagramSocket listen_socket, Integer recPort) throws IOException
 		{
 			//retrieve message
-			DatagramSocket listen_socket = new DatagramSocket(recPort);
+			listen_socket = new DatagramSocket(recPort);
 			byte[] b1 = new byte[1024];
 			DatagramPacket pc = new DatagramPacket(b1,b1.length);
+			
+			//if accepted last data
+			
+			if ((sequence == (msgLength-1)))
+			{
+				
+				listen_socket.close();
+				sequence = 0;
+				msgLength = 0;
+				expected = 0;
+				System.out.print("node> ");
+				//startInputThread();
+				return;
+			}
+				
 			listen_socket.receive(pc);
+			
 
+			
+			
+			
 			//Must trim after getData() function because it returns arbitrary whitespace
 			String getMsg = new String(pc.getData()).trim();
 			
@@ -74,18 +126,25 @@ public class Node
 			
 			//unpack listened info for convenience [seqNumber | buffLength | data | sender's port]
         	Integer seq = Integer.valueOf(info[0]);
+        	sequence = seq;
         	Integer buffLength = Integer.valueOf(info[1]);
+        	msgLength = buffLength;
         	Character data = info[2].charAt(0);
         	Integer replyToPort = Integer.valueOf(info[3]);
 			
+        	
         	//Receiver: print received data time
-        	BigDecimal getDataTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
+        	BigDecimal getDataTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-3);
         	System.out.println("["+getDataTime+"] " + "packet" + seq + " " + data + " received");
         	
         	
-        	
-        	
-        	if (seq == expected && seq < buffLength)
+        	if (seq == buffLength)
+        	{
+        		System.out.println("do I have ever get here");
+        		listen_socket.close();
+        		return;
+        	}
+        	else if (seq == expected && seq < buffLength)
         	{
         		expected++;
         		//System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);
@@ -111,8 +170,8 @@ public class Node
 			
 			
 			//Receiver: print reply ack status
-			BigDecimal replyACKTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
-			System.out.println("["+replyACKTime+"]"+" ACK" + seq + " sent, ecpecting packet " + expected);
+			BigDecimal replyACKTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-3);
+			System.out.println("["+replyACKTime+"]"+" ACK" + seq + " sent, expecting packet " + expected);
 			
 			
 			listen_socket.close();
@@ -132,12 +191,6 @@ public class Node
 		}
 		
 		
-		public Boolean sequenceIsCorrect()
-		{
-			return false;
-		}
-	    
-		
 
 		private void startInputThread()
 	    {
@@ -156,9 +209,9 @@ public class Node
 	        public void run()
 	        {
 	            Scanner reader = new Scanner(System.in);
-	            String[] cmdArray;
 	            while (true)
 	            {
+	            	String[] cmdArray;
 	            	System.out.print("node> ");
 	                cmdArray = reader.nextLine().trim().replaceAll("\\s+"," ").split(" ");
 	                
@@ -187,8 +240,6 @@ public class Node
 	                		return;
 	                	}
 	                	
-	                	//TO DO: Why on last iteration line 181 tries to send packet containing buffer[buffer.length]
-	                	//which doesn't exist. ie. if message is size =6, it tries to send buffer[6] but should only send up to buffer[5]
 	                	
 	                	
 	                	//sends message character by character following window size
@@ -208,10 +259,11 @@ public class Node
 	                				{
 	                					ia = InetAddress.getLocalHost();
 	                					info = sendPacketGetACK(s1,i, buffer.length, buffer[i], ia, peerPort);
+	                					
 	                				} 
 	                				catch (UnknownHostException e) {e.printStackTrace();} 
 	                				catch (IOException e) {e.printStackTrace();}
-	                				
+	                				//catch (NumberFormatException e) {e.printStackTrace();}
 	                				
 	                				//{System.out.println(info[0] + " " + info[1] + " " + info[2] + " " + info[3]);}
 	    		        		
@@ -223,8 +275,9 @@ public class Node
 	                			
 	                		} //end sendPacketGetACK
 	                	}
-	                	
-	                }
+	                	counter = 0;
+	                	buffer = null;
+	                }  //end if "send"
 	               
 	            }
 	        }     
@@ -248,7 +301,7 @@ public class Node
 				
 				
 				//Sender: print send data time
-				BigDecimal currTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
+				BigDecimal currTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-3);
 	            System.out.println("["+currTime+"] " + "packet" + seq + " " + data + " sent");
 				
 	            
@@ -265,10 +318,12 @@ public class Node
 	    		{	
 	    			timedOut = true;
 	    			System.out.println("Timed out");
+	    			
 	    		}
 
 	    		//Must trim after getData() function because it returns arbitrary whitespace
 	    		String getMsg = new String(pc.getData()).trim();
+	    		
 				
 	    		//returns seqNumber | msgLength | data | sender's port
 	    		String port = String.valueOf(pc.getPort()).trim();
@@ -295,7 +350,7 @@ public class Node
 	        	}
 	    	
 	    	//Sender: print receive ACK status
-	    		BigDecimal getACKTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-4);
+	    		BigDecimal getACKTime = new BigDecimal(System.currentTimeMillis()).scaleByPowerOfTen(-3);
 				System.out.println("["+getACKTime+"]"+" ACK" + ackSeq + " received, window moves to " + (counter));
 	    		
 	    	

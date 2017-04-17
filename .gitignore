@@ -7,3 +7,7 @@
 /Node$ReadInput.class
 /Packet.class
 /Gbnnode2.class
+/gbnnode.class
+/gbnnode2.class
+/Node$InterruptableUDPThread.class
+/Node$CloseSocket.class

@@ -4,7 +4,7 @@ import java.util.Scanner;
 class gbnnode{
     
     
-    public static void main (String args[]) throws IOException
+    public static void main (String args[]) throws IOException, InterruptedException
     {
         String mode = args[3];
         if (mode.equals("-d") && args.length==5)
