@@ -1,23 +1,42 @@
 
 public class Packet
 {
-	private Integer seq = 0;
-	private Character data = null;
+	Boolean dropped = false;
 	
-	Packet(Integer seq, Character data)
+	Packet(Integer counter, Integer n)
 	{
-		this.seq = seq;
-		this.data = data;
+		if ((counter+1)%n == 0)
+		{
+			dropped = true;
+		}
+	}
+	
+	Packet(Double p)
+	{
+		
 	}
 
-	public Integer getSeq()
+	
+
+	public void probability()
 	{
-		return this.seq;
+		
 	}
 	
-	public Character getData()
+	
+	public Boolean isDropped()
 	{
-		return this.data;
+		return dropped;
 	}
+	
 	
 }
+
+/*if (mode.equals("-d"))
+		{
+			
+		}
+		else if (mode.equals("-p"))
+		{
+			
+		}*/

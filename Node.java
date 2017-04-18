@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Random;
 import java.util.Scanner;
 
 //the trick would be to have EACH packet create its own thread to send AND wait for ack.
@@ -21,8 +22,11 @@ public class Node
 	    private Integer selfPort = 0;
 	    private Integer peerPort = 0;
 	    private Integer winSize = 0;
+	    
+	    //n or p depending on mode
 	    private String mode = "";
 	    private Integer nVal = 0;
+	    private Double pVal = 0.0;
 	    
 	    //global instances used by receiver
 	    private Integer expected = 0;
@@ -57,12 +61,22 @@ public class Node
 	    
 		public Node(String args[]) throws IOException
 	    {
+			String type = args[3];
+			if (type.equals("-d"))
+			{
+				this.nVal = Integer.valueOf((args[4]));
+			}
+			else if (type.equals("-p"))
+			{
+				this.pVal = Double.valueOf((args[4]));
+	        }    
+			
 			this.selfPort = Integer.valueOf(args[0]);
 			this.peerPort = Integer.valueOf(args[1]);
 			this.winSize = Integer.valueOf(args[2]);
 			this.mode = args[3];
-			this.nVal = Integer.valueOf((args[4]));
-	        
+			
+			
 			startInputThread();
 	        
 	        /*CloseSocket close = new CloseSocket();
@@ -297,11 +311,9 @@ public class Node
 	    		DatagramPacket Client_Register = new DatagramPacket(b0,b0.length,recIP,recPort);
 	    		
 	    						
+	    		System.out.println(packetIsDropped());
+	    		socket.send(Client_Register);
 	    		
-	    		if (seq != 2)
-	    		{
-	    			socket.send(Client_Register);
-	    		}
 				
 				
 				//Sender: print send data time
@@ -364,20 +376,32 @@ public class Node
 	  } //end sendPacketGetACK
 	    
 	    
-	 public Boolean sendFailed()
-	 {
-		 
-		 return false;
-	 }	
-	  public void emulateSendFailure()
+	 
+	 
+	  public Boolean packetIsDropped()
 	  {
-	  	
+		  Boolean dropped = false;
+		  if (mode.equals("-d"))
+		  {
+			  if ((counter+1)%nVal == 0)
+			  {
+					dropped = true;
+			  }
+		  }
+		  else if (mode.equals("-p"))
+		  {
+			  double rand = Math.random();
+			  if (0 < rand && rand < pVal)
+			  {
+				  dropped = true;
+			  }
+		  }
+		  return dropped;
 	  }
 	  
 	  public String printStatus(String status)
 	  {
-			
-			return status;
+		return status;
 	  }
 	  
 }
