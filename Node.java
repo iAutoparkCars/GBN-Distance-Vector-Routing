@@ -202,7 +202,6 @@ public class Node
 	    
 		Integer counter = 0;
 		char[] buffer;  
-		Boolean timedOut = false;
 		
 		class ReadInput implements Runnable
 	    {
@@ -252,13 +251,12 @@ public class Node
 	                			{
 	                				DatagramSocket s1 = null;
 	                				InetAddress ia;
-	                				String[] info = null;
 	                			
 	                				//info: [seqNumber | msgLength | data | sender's port]
 	                				try
 	                				{
 	                					ia = InetAddress.getLocalHost();
-	                					info = sendPacketGetACK(s1,i, buffer.length, buffer[i], ia, peerPort);
+	                					sendPacketGetACK(s1,i, buffer.length, buffer[i], ia, peerPort);
 	                					
 	                				} 
 	                				catch (UnknownHostException e) {e.printStackTrace();} 
@@ -287,7 +285,7 @@ public class Node
 	    /*
 	     * @param [Sequence number | buffer length | data], recipientIP, recipientPort 
 	    */
-	    public String[] sendPacketGetACK(DatagramSocket socket, Integer seq, Integer buffLength, Character data, 
+	    public void sendPacketGetACK(DatagramSocket socket, Integer seq, Integer buffLength, Character data, 
 	    		InetAddress recIP, Integer recPort) throws IOException
 	    {
 	    	//send Packet
@@ -297,7 +295,13 @@ public class Node
 	    	
 	    		socket = new DatagramSocket();
 	    		DatagramPacket Client_Register = new DatagramPacket(b0,b0.length,recIP,recPort);
-	    		socket.send(Client_Register);
+	    		
+	    						
+	    		
+	    		if (seq != 2)
+	    		{
+	    			socket.send(Client_Register);
+	    		}
 				
 				
 				//Sender: print send data time
@@ -305,20 +309,23 @@ public class Node
 	            System.out.println("["+currTime+"] " + "packet" + seq + " " + data + " sent");
 				
 	            
-	            
+	        //_______________________________________//_______________________________________//     
 				
 			//get ACK
 	    		socket.setSoTimeout(500);
 	    		byte[] b1 = new byte[1024];
 	    		DatagramPacket pc = new DatagramPacket(b1,b1.length);
 	    		
+	    		//if not received ACK, then continuously resend this packet
 	    		try
 	    		{socket.receive(pc);}
 	    		catch(SocketTimeoutException e)
 	    		{	
-	    			timedOut = true;
-	    			System.out.println("Timed out");
 	    			
+	    			System.out.println("Timed out. Resending.");
+	    			sendPacketGetACK(socket, seq , buffLength, data, recIP, recPort);
+	    			return;
+	    			//System.out.println("Program will terminate."); System.exit(0);
 	    		}
 
 	    		//Must trim after getData() function because it returns arbitrary whitespace
@@ -354,10 +361,14 @@ public class Node
 				System.out.println("["+getACKTime+"]"+" ACK" + ackSeq + " received, window moves to " + (counter));
 	    		
 	    	
-	    	return info;
 	  } //end sendPacketGetACK
 	    
 	    
+	 public Boolean sendFailed()
+	 {
+		 
+		 return false;
+	 }	
 	  public void emulateSendFailure()
 	  {
 	  	
@@ -368,4 +379,5 @@ public class Node
 			
 			return status;
 	  }
+	  
 }
