@@ -1,5 +1,6 @@
 import java.io.IOException;
-import java.util.Scanner;
+import java.net.*;
+import java.util.*;
 
 class gbnnode{
     
